@@ -1,0 +1,52 @@
+<div class="m-3 sm:m-4 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 space-y-3">
+  <!-- Top Comment Header -->
+  <div class="flex items-center justify-between">
+    <span class="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+      TOP COMMENT
+    </span>
+  </div>
+
+  <!-- Comment Card -->
+  <div class="bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl p-3 sm:p-3.5 shadow-xs space-y-2.5 transition">
+    <div  class="flex items-start gap-3">
+      <!-- User Avatar -->
+      <img [routerLink]="['/profile', commentData().commentCreator._id]"
+        [src]="commentData().commentCreator.photo || defaultPhoto"
+        [alt]="commentData().commentCreator.name || 'User'"
+        (error)="handleImageError($event)"
+        class="w-9 h-9 cursor-pointer sm:w-10 sm:h-10 rounded-full object-cover shrink-0 border border-slate-200/80 dark:border-slate-700 shadow-xs"
+      />
+
+      <!-- User Name & Comment Text -->
+      <div class="flex-1 min-w-0">
+        <h4 [routerLink]="['/profile', commentData().commentCreator._id]" class="text-sm font-bold text-slate-900 dark:text-slate-100 hover:underline cursor-pointer truncate">
+          {{ commentData().commentCreator.name }}
+        </h4>
+        <p class="text-sm text-slate-800 dark:text-slate-200 mt-0.5 leading-relaxed whitespace-pre-wrap break-words">
+          {{ commentData().content }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Optional Comment Image (as shown in design) -->
+    @if (commentData().image) {
+      <div class="rounded-xl overflow-hidden border border-slate-100 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-900">
+        <img
+          [src]="commentData().image"
+          alt="Comment attachment"
+          class="w-full max-h-72 object-cover"
+        />
+      </div>
+    }
+  </div>
+
+  <!-- View All Comments Link -->
+  <div>
+    <button
+      type="button"
+      (click)="onViewAllComments()"
+      class="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline cursor-pointer transition focus:outline-none inline-flex items-center gap-1">
+      View all comments
+    </button>
+  </div>
+</div>

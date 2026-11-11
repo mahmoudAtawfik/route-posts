@@ -1,0 +1,48 @@
+<div class="mx-auto max-w-7xl px-3 py-3.5" dir="ltr">
+  <main class="min-w-0">
+    <div
+      class="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)_280px] xl:grid-cols-[240px_minmax(0,1fr)_300px] gap-4">
+
+      <!-- 1. Left Aside Sidebar -->
+      <!-- On mobile: Appears 2nd (order-2). On large screens: Appears 1st on the left (lg:order-1). -->
+      <aside class="w-full shrink-0 order-1 lg:order-1 lg:sticky lg:top-[84px]">
+        <app-left-aside [activeTab]="activeTab()" (tabChanged)="changeTab($event)"></app-left-aside>
+      </aside>
+
+      <!-- 2. Main Posts Section -->
+      <!-- On mobile: Appears last (order-3). On large screens: Appears in the center (lg:order-2). -->
+      <section class="space-y-4 order-3 lg:order-2">
+        <!-- Share Post Modal -->
+        <app-share-post [post]="sharingPost()" (close)="closeShareModal()" (postShared)="onPostShared()">
+        </app-share-post>
+
+        <!-- Create Post -->
+        <app-create-post [userData]="userData()" (postCreated)="getAllPosts()" [myPhoto]="myPhoto()"></app-create-post>
+
+        <!-- Loop through Posts -->
+        @for (post of allpostsArray(); track post._id) {
+        <div class="w-full">
+          <app-post-card-component [post]="post" [myId]="myId()" [isEditing]="editPost() === post._id"
+            [editContent]="editPostContent()" [isSaving]="isEditingPostLoading()" (like)="likePost($event)"
+            (bookmark)="bookmarkPost($event)" (edit)="editPosts($event)" (delete)="deletePost($event)"
+            (share)="openShareModal($event)" (editContentChange)="editPostContent.set($event)"
+            (cancelEdit)="cancelEditPost()" (saveEdit)="editPostContent.set($event.body); submitEdit($event.postId)">
+          </app-post-card-component>
+        </div>
+        } @empty {
+        <div class="text-center py-12 text-gray-400">
+          <i class="fa-regular fa-newspaper text-4xl mb-2"></i>
+          <p class="text-sm">لا توجد منشورات حالياً</p>
+        </div>
+        }
+      </section>
+
+      <!-- 3. Right Aside Sidebar (Suggested Friends) -->
+      <!-- On mobile: Appears 1st at the top (order-1). On large screens: Appears 3rd on the right (lg:order-3). -->
+      <div class="order-2 lg:order-3">
+        <app-right-aside></app-right-aside>
+      </div>
+
+    </div>
+  </main>
+</div>

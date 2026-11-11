@@ -1,0 +1,61 @@
+
+<div class="max-w-xl mx-auto py-6 px-4">
+ 
+  <!-- Back Button -->
+  <button
+    type="button"
+    (click)="goBack()"
+    class="flex items-center gap-2 mb-6 text-gray-600 hover:text-blue-600 transition-colors"
+  >
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Back</span>
+  </button>
+    <!-- Share Post Modal -->
+  <app-share-post [post]="sharingPost()" (close)="closeShareModal()" (postShared)="onPostShared()">
+  </app-share-post>
+  <!-- Loading -->
+  @if (isLoading()) {
+    <div class="flex justify-center items-center py-20">
+      <span class="animate-spin w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full"></span>
+    </div>
+  }
+
+  <!-- Error -->
+  @else if (errorMessage()) {
+    <div class="text-center py-16">
+      <p class="text-red-500 mb-4">{{ errorMessage() }}</p>
+
+      <button
+        type="button"
+        (click)="goBack()"
+        class="px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+      >
+        Go Back
+      </button>
+    </div>
+  }
+
+  <!-- Post -->
+  @else if (post(); as currentPost) {
+    <app-post-card-component
+      [post]="currentPost"
+      [myId]="myId()"
+      [isEditing]="isEditing()"
+      [editContent]="editPostContent()"
+      [isSaving]="isEditingLoading()"
+      detailsAction="comments"
+      [showCommentsWhenNoTopComment]="true"
+
+      (like)="likePost()"
+      (bookmark)="bookmarkPost()"
+      (edit)="startEditPost()"
+      (delete)="deletePost()"
+      (share)="openShareModal()"
+
+      (editContentChange)="editPostContent.set($event)"
+      (cancelEdit)="cancelEditPost()"
+      (saveEdit)="editPostContent.set($event.body); submitEdit()"
+    ></app-post-card-component>
+  }
+
+</div>

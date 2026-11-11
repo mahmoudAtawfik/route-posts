@@ -1,0 +1,356 @@
+<div
+  class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden transition ">
+
+  <!-- Post Header -->
+  <div class="p-4 flex items-center justify-between">
+
+    <div class="flex items-center space-x-3 space-x-reverse">
+
+      <a [routerLink]="post().user._id === myId() ? '/profile' : ['/profile', post().user._id]" class="shrink-0 cursor-pointer">
+        <img
+          [src]="post().user.photo || 'https://via.placeholder.com/40'"
+          [alt]="post().user.name"
+          class="w-11 h-11 rounded-full object-cover border border-gray-100 shadow-sm">
+      </a>
+
+      <div>
+        <a [routerLink]="post().user._id === myId() ? '/profile' : ['/profile', post().user._id]" class="font-bold text-gray-900 dark:text-gray-100 text-sm hover:underline cursor-pointer block">
+          {{ post().user.name }}
+        </a>
+
+        <div class="flex items-center space-x-2 space-x-reverse text-xs text-gray-500 dark:text-gray-400">
+          <span>&#64;{{ post().user.username }}</span>
+          <span>•</span>
+          <span>{{ post().createdAt | date:'short' }}</span>
+          <span>•</span>
+
+          <span class="capitalize flex items-center gap-1">
+            <i class="fa-solid fa-globe text-[10px]"></i>
+            {{ post().privacy || 'Public' }}
+          </span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Options Menu -->
+    <div class="relative">
+
+      <button
+        type="button"
+        (click)="toggleOptions($event)"
+        title="Post options"
+        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-2 rounded-full focus:outline-none transition cursor-pointer">
+
+        <i class="fa-solid fa-ellipsis text-lg"></i>
+
+      </button>
+
+      @if (isOptionOpen()) {
+
+        <div
+          (click)="$event.stopPropagation()"
+          class="absolute right-0 z-30 mt-2 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:bg-slate-800 dark:border-slate-700">
+
+          <!-- Bookmark -->
+          @if (post().bookmarked) {
+
+            <button
+              type="button"
+              (click)="bookmarkPost()"
+              class="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-semibold text-blue-600 bg-blue-50/70 hover:bg-blue-100/70 transition-colors cursor-pointer">
+
+              <i class="fa-solid fa-bookmark text-base text-blue-600"></i>
+              <span>Unsave post</span>
+
+            </button>
+
+          } @else {
+
+            <button
+              type="button"
+              (click)="bookmarkPost()"
+              class="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+
+              <i class="fa-regular fa-bookmark text-base text-slate-500 dark:text-slate-400"></i>
+              <span>Save post</span>
+
+            </button>
+
+          }
+
+          <!-- Edit & Delete -->
+          @if (post().user._id === myId()) {
+
+            <button
+              type="button"
+              (click)="editPost()"
+              class="flex w-full items-center gap-2 px-3.5 py-2 text-left text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer">
+
+              <i class="fa-solid fa-pen-to-square"></i>
+              <span>Edit post</span>
+
+            </button>
+
+            <button
+              type="button"
+              (click)="deletePost()"
+              class="flex w-full items-center gap-2 px-3.5 py-2 text-left text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer">
+
+              <i class="fa-solid fa-trash"></i>
+              <span>Delete post</span>
+
+            </button>
+
+          }
+
+        </div>
+
+      }
+
+    </div>
+
+  </div>
+
+  <!-- Post Body / Inline Edit -->
+  @if (isEditing()) {
+
+    <div class="px-4 pb-3">
+
+      <textarea
+        [value]="editContent()"
+        (input)="onEditInput($event)"
+        rows="3"
+        maxlength="5000"
+        placeholder="What's on your mind?"
+        class="w-full min-h-[110px] rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 outline-none transition focus:border-[#1877f2] focus:ring-2 focus:ring-[#1877f2]/20 resize-none">
+      </textarea>
+
+      <div class="mt-2.5 flex items-center justify-end gap-2.5">
+
+        <button
+          type="button"
+          (click)="cancelEditing()"
+          class="rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-1.5 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer">
+
+          Cancel
+
+        </button>
+
+        <button
+          type="button"
+          (click)="submitEdit()"
+          [disabled]="isSaving() || !editContent().trim()"
+          class="rounded-full bg-[#1877f2] hover:bg-[#166fe5] px-5 py-1.5 text-xs sm:text-sm font-semibold text-white transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs inline-flex items-center gap-1.5">
+
+          @if (isSaving()) {
+            <i class="fa-solid fa-spinner fa-spin text-xs"></i>
+          }
+
+          <span>Save</span>
+
+        </button>
+
+      </div>
+
+    </div>
+
+  } @else {
+
+    @if (post().body) {
+
+      <div class="px-4 pb-2 text-gray-800 dark:text-gray-200 text-sm leading-relaxed whitespace-pre-wrap">
+        {{ post().body }}
+      </div>
+
+    }
+
+  }
+
+  <!-- Bookmark Status -->
+  @if (post().bookmarked) {
+
+    <div class="px-4 pb-3">
+
+      <div class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 dark:bg-blue-900/30 dark:border-blue-800 px-3 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400">
+
+        <i class="fa-solid fa-bookmark text-[11px]"></i>
+        Saved
+
+      </div>
+
+    </div>
+
+  }
+
+  <!-- Shared Post -->
+  @if (post().isShare && post().sharedPost) {
+
+    <div class="mx-4 mb-3 border border-gray-200 dark:border-gray-700 rounded-xl p-3 bg-gray-50 dark:bg-gray-800/50">
+
+      <div class="flex items-center justify-between mb-2">
+
+        <div class="flex items-center space-x-2 space-x-reverse">
+
+          <img
+            [src]="post().sharedPost!.user.photo || 'https://via.placeholder.com/40'"
+            class="w-7 h-7 rounded-full object-cover">
+
+          <span class="text-xs font-semibold text-gray-800 dark:text-gray-200">
+            {{ post().sharedPost!.user.name }}
+          </span>
+
+        </div>
+
+        <span class="text-[10px] text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded">
+          Original Post ↗
+        </span>
+
+      </div>
+
+      @if (post().sharedPost!.body) {
+
+        <p class="text-xs text-gray-600 dark:text-gray-300 mb-2">
+          {{ post().sharedPost!.body }}
+        </p>
+
+      }
+
+      @if (post().sharedPost!.image) {
+
+        <img
+          [src]="post().sharedPost!.image!"
+          class="rounded-lg max-h-60 w-full object-cover">
+
+      }
+
+    </div>
+
+  }
+
+  <!-- Post Image -->
+  @if (post().image) {
+
+    <div class="w-full bg-black flex items-center justify-center">
+
+      <img
+        [src]="post().image!"
+        alt="Post Image"
+        class="w-full max-h-[550px] object-cover">
+
+    </div>
+
+  }
+
+  <!-- Stats Bar -->
+  <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+
+    <div (click)="getpostlikes()" class="flex items-center space-x-1 space-x-reverse cursor-pointer group">
+
+      <span class="bg-blue-500 text-white rounded-full w-4 h-4 inline-flex items-center justify-center text-[10px] mr-1 group-hover:scale-110 transition-transform">
+        <i class="fa-solid fa-thumbs-up"></i>
+      </span>
+
+      <span class="cursor-pointer group-hover:underline">{{ post().likesCount || 0 }} likes</span>
+
+    </div>
+
+    <div class="flex items-center space-x-3 space-x-reverse">
+
+      <span>{{ post().sharesCount || 0 }} shares</span>
+      <span>•</span>
+      <span>{{ post().commentsCount || 0 }} comments</span>
+      <span>•</span>
+
+      @if (detailsAction() === 'route') {
+
+        <a
+          [routerLink]="['/post', post()._id]"
+          class="text-blue-600 dark:text-blue-400 font-medium cursor-pointer hover:underline">
+          View details
+        </a>
+
+      } @else {
+
+        <span
+          (click)="toggleComments()"
+          class="text-blue-600 dark:text-blue-400 font-medium cursor-pointer hover:underline">
+          View details
+        </span>
+
+      }
+
+    </div>
+
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="px-2 py-1 border-b border-gray-100 dark:border-gray-800 flex items-center justify-around text-gray-600 dark:text-gray-400 font-medium text-sm">
+
+    <button
+      type="button"
+      (click)="likePost()"
+      [class.text-blue-600]="isLiked()"
+      class="flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition cursor-pointer">
+
+      <i class="fa-regular fa-thumbs-up" [class.fa-solid]="isLiked()"></i>
+      Like
+
+    </button>
+
+    <button
+      type="button"
+      (click)="toggleComments()"
+      class="flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition cursor-pointer">
+
+      <i class="fa-regular fa-comment"></i>
+      Comment
+
+    </button>
+
+    <button
+      type="button"
+      (click)="sharePost()"
+      class="flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition cursor-pointer">
+
+      <i class="fa-solid fa-share"></i>
+      Share
+
+    </button>
+
+  </div>
+
+  <!-- Top Comment -->
+  @if (post().topComment && !viewAllComments()) {
+
+    <app-top-comment
+      [comment]="post().topComment!"
+      [commentsCount]="post().commentsCount"
+      (viewAllComments)="toggleComments()">
+    </app-top-comment>
+
+  }
+
+  <!-- All Comments -->
+  @if (
+    viewAllComments() ||
+    (showCommentsWhenNoTopComment() && !post().topComment && post().commentsCount > 0)
+  ) {
+
+    <div class="p-2 sm:p-4">
+
+      <app-allcomment [postId]="post()._id"></app-allcomment>
+
+    </div>
+
+  }
+
+  <!-- Who Like Post Modal -->
+  @if (showLikesModal()) {
+    <app-who-like-post
+      [postId]="post()._id"
+      (close)="showLikesModal.set(false)">
+    </app-who-like-post>
+  }
+
+</div>

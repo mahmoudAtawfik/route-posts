@@ -1,0 +1,366 @@
+<div class="space-y-4 pt-3 pb-2">
+  <!-- Comments Header Bar -->
+  <div class="border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 bg-white dark:bg-slate-900 flex items-center justify-between shadow-xs">
+    <!-- Title & Count Badge -->
+    <div class="flex items-center gap-2">
+      <span class="text-sm font-bold text-slate-900 dark:text-slate-100">Comments</span>
+      <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/40 dark:text-blue-400 rounded-full">
+        {{ allComment().length }}
+      </span>
+    </div>
+
+    <!-- Most Relevant Sort Dropdown -->
+    <div class="relative">
+      <button
+        type="button"
+        (click)="toggleSortDropdown()"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer shadow-2xs">
+        <span>{{ selectedSort() }}</span>
+        <svg class="w-3.5 h-3.5 text-slate-500 transition-transform" [class.rotate-180]="isSortOpen()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </button>
+
+      @if (isSortOpen()) {
+        <div class="absolute right-0 mt-1.5 w-36 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg py-1 z-20 text-xs">
+          <button
+            type="button"
+            (click)="setSort('Most relevant')"
+            class="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">
+            Most relevant
+          </button>
+          <button
+            type="button"
+            (click)="setSort('Newest')"
+            class="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">
+            Newest
+          </button>
+          <button
+            type="button"
+            (click)="setSort('All comments')"
+            class="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">
+            All comments
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Comments List -->
+  <div class="space-y-4">
+    @for (comment of allComment(); track comment._id) {
+      <div class="flex items-start gap-3">
+        <!-- User Avatar -->
+        <img [routerLink]="['/profile', comment.commentCreator._id]"
+          [src]="comment.commentCreator.photo || defaultPhoto"
+          [alt]="comment.commentCreator.name || 'User'"
+          (error)="handleImageError($event)"
+          class="w-9 h-9 cursor-pointer sm:w-10 sm:h-10 rounded-full object-cover shrink-0 border border-slate-200/80 dark:border-slate-700 shadow-2xs mt-0.5"
+        />
+
+        <div class="flex-1 min-w-0 max-w-2xl">
+          <!-- Comment Bubble -->
+          <div class="bg-slate-100/90 dark:bg-slate-800 rounded-2xl px-4 py-3 inline-block w-full sm:w-auto max-w-full space-y-1">
+            <!-- Author Name -->
+            <h4 
+            [routerLink]="['/profile', comment.commentCreator._id]"
+            class="text-sm font-bold text-slate-900 dark:text-slate-100 leading-snug hover:underline cursor-pointer">
+              {{ comment.commentCreator.name }}
+            </h4>
+
+            <!-- Handle & Timestamp -->
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-normal">
+              &#64;{{ comment.commentCreator.username || comment.commentCreator.name }} · {{ comment.createdAt | date:'MMM d, h:mm a' }}
+            </p>
+
+            <!-- Edit Comment Textarea vs Content -->
+            @if (editingCommentId() === comment._id) {
+              <div class="mt-2 space-y-2">
+                <textarea
+                  [ngModel]="editCommentText()"
+                  (ngModelChange)="editCommentText.set($event)"
+                  rows="2"
+                  class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
+                ></textarea>
+                <div class="flex items-center justify-end gap-1.5">
+                  <button
+                    type="button"
+                    (click)="cancelEditComment()"
+                    class="rounded-lg px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-200/60 dark:text-slate-300 transition cursor-pointer">
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    (click)="saveEditComment(comment)"
+                    class="rounded-lg bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700 transition cursor-pointer">
+                    Save
+                  </button>
+                </div>
+              </div>
+            } @else {
+              @if (comment.content) {
+                <p class="text-sm text-slate-800 dark:text-slate-200 pt-1 leading-relaxed whitespace-pre-wrap break-words">
+                  {{ comment.content }}
+                </p>
+              }
+            }
+
+            <!-- Attached Image (if present) -->
+            @if (comment.image) {
+              <div class="pt-2">
+                <img
+                  [src]="comment.image"
+                  alt="Comment attachment"
+                  class="rounded-xl max-h-96 w-full object-cover border border-slate-200/60 dark:border-slate-700"
+                />
+              </div>
+            }
+          </div>
+
+          <!-- Actions Bar (Timestamp, Like, Reply, Options) -->
+          <div class="flex items-center gap-3.5 mt-1.5 px-3 text-xs text-slate-400 dark:text-slate-500 font-medium">
+            <span>{{ comment.createdAt | date:'MMM d, h:mm a' }}</span>
+
+            <!-- Like Button -->
+            <button
+              type="button"
+              (click)="toggleLikeComment(comment)"
+              [class.text-blue-600]="isCommentLiked(comment)"
+              [class.dark:text-blue-400]="isCommentLiked(comment)"
+              [class.text-slate-600]="!isCommentLiked(comment)"
+              [class.dark:text-slate-400]="!isCommentLiked(comment)"
+              class="font-semibold hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition">
+              Like ({{ comment.likes.length || 0 }})
+            </button>
+
+            <!-- Reply / Hide replies Button -->
+            <button
+              type="button"
+              (click)="toggleReplies(comment._id)"
+              [class.text-blue-600]="isRepliesOpen(comment._id)"
+              [class.dark:text-blue-400]="isRepliesOpen(comment._id)"
+              [class.text-slate-600]="!isRepliesOpen(comment._id)"
+              [class.dark:text-slate-400]="!isRepliesOpen(comment._id)"
+              class="font-semibold hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition">
+              @if (isRepliesOpen(comment._id)) {
+                Hide replies
+              } @else {
+                Reply@if (comment.repliesCount) { ({{ comment.repliesCount }}) }
+              }
+            </button>
+
+            <!-- 3 Dots Options Menu (if comment belongs to me) -->
+            @if (isMyComment(comment)) {
+              <div class="relative ml-auto">
+                <button
+                  type="button"
+                  (click)="toggleOptionsMenu('comment-' + comment._id, $event)"
+                  title="Comment options"
+                  class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                  <i class="fa-solid fa-ellipsis text-xs"></i>
+                </button>
+
+                @if (activeOptionsMenu() === 'comment-' + comment._id) {
+                  <div
+                    (click)="$event.stopPropagation()"
+                    class="absolute right-0 top-full mt-1 z-30 w-32 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg py-1 text-xs">
+                    <button
+                      type="button"
+                      (click)="startEditComment(comment)"
+                      class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium cursor-pointer">
+                      <i class="fa-solid fa-pencil text-[11px] text-slate-500"></i>
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      (click)="deleteComment(comment._id)"
+                      class="w-full flex items-center gap-2 px-3 py-1.5 text-left text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-medium cursor-pointer">
+                      <i class="fa-solid fa-trash-can text-[11px]"></i>
+                      Delete
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Threaded Reply Section -->
+          @if (isRepliesOpen(comment._id)) {
+            <div class="mt-2.5 ml-2 sm:ml-4 pl-3.5 sm:pl-4 border-l-2 border-slate-200 dark:border-slate-700 space-y-3">
+              <!-- Loading Indicator -->
+              @if (loadingReplies()[comment._id]) {
+                <div class="flex items-center gap-2 py-2 text-xs text-slate-400">
+                  <i class="fa-solid fa-spinner fa-spin text-xs"></i>
+                  <span>Loading replies...</span>
+                </div>
+              } @else {
+                <!-- Replies List -->
+                @for (reply of repliesMap()[comment._id] || []; track reply._id) {
+                  <div class="flex items-start gap-2.5 sm:gap-3">
+                    <!-- Reply Author Avatar -->
+                    <img
+                      [routerLink]="['/profile', reply.commentCreator._id]"
+                      [src]="reply.commentCreator.photo || defaultPhoto"
+                      [alt]="reply.commentCreator.name || 'User'"
+                      (error)="handleImageError($event)"
+                      class="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200/80 dark:border-slate-700 shadow-2xs mt-0.5 cursor-pointer"
+                    />
+
+                    <div class="flex-1 min-w-0 max-w-xl">
+                      <!-- Reply Bubble -->
+                      <div class="bg-slate-100/90 dark:bg-slate-800 rounded-2xl px-3.5 py-2.5 inline-block w-full sm:w-auto max-w-full space-y-1">
+                        <h5
+                          [routerLink]="['/profile', reply.commentCreator._id]"
+                          class="text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug hover:underline cursor-pointer">
+                          {{ reply.commentCreator.name }}
+                        </h5>
+
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
+                          &#64;{{ reply.commentCreator.username || reply.commentCreator.name }} · {{ reply.createdAt | date:'MMM d, h:mm a' }}
+                        </p>
+
+                        <!-- Edit Reply Textarea vs Content -->
+                        @if (editingReplyId() === reply._id) {
+                          <div class="mt-2 space-y-2">
+                            <textarea
+                              [ngModel]="editReplyText()"
+                              (ngModelChange)="editReplyText.set($event)"
+                              rows="2"
+                              class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
+                            ></textarea>
+                            <div class="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                (click)="cancelEditReply()"
+                                class="rounded-lg px-2 py-0.5 text-xs font-medium text-slate-600 hover:bg-slate-200/60 dark:text-slate-300 transition cursor-pointer">
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                (click)="saveEditReply(comment._id, reply)"
+                                class="rounded-lg bg-blue-600 px-2.5 py-0.5 text-xs font-semibold text-white hover:bg-blue-700 transition cursor-pointer">
+                                Save
+                              </button>
+                            </div>
+                          </div>
+                        } @else {
+                          @if (reply.content) {
+                            <p class="text-xs text-slate-800 dark:text-slate-200 pt-0.5 leading-relaxed whitespace-pre-wrap break-words">
+                              {{ reply.content }}
+                            </p>
+                          }
+                        }
+
+                        <!-- Reply Attached Image -->
+                        @if (reply.image) {
+                          <div class="pt-1.5">
+                            <img
+                              [src]="reply.image"
+                              alt="Reply attachment"
+                              class="rounded-xl max-h-60 w-full object-cover border border-slate-200/60 dark:border-slate-700"
+                            />
+                          </div>
+                        }
+                      </div>
+
+                      <!-- Reply Actions Bar -->
+                      <div class="flex items-center gap-3 mt-1 px-2.5 text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                        <span>{{ reply.createdAt | date:'MMM d, h:mm a' }}</span>
+
+                        <!-- Like Reply -->
+                        <button
+                          type="button"
+                          (click)="toggleLikeReply(comment._id, reply)"
+                          [class.text-blue-600]="isReplyLiked(reply)"
+                          [class.dark:text-blue-400]="isReplyLiked(reply)"
+                          [class.text-slate-600]="!isReplyLiked(reply)"
+                          [class.dark:text-slate-400]="!isReplyLiked(reply)"
+                          class="font-semibold hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition">
+                          Like ({{ reply.likes.length || 0 }})
+                        </button>
+
+                        <!-- 3 dots options if reply belongs to me -->
+                        @if (isMyReply(reply)) {
+                          <div class="relative ml-auto">
+                            <button
+                              type="button"
+                              (click)="toggleOptionsMenu('reply-' + reply._id, $event)"
+                              title="Reply options"
+                              class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                              <i class="fa-solid fa-ellipsis text-[10px]"></i>
+                            </button>
+
+                            @if (activeOptionsMenu() === 'reply-' + reply._id) {
+                              <div
+                                (click)="$event.stopPropagation()"
+                                class="absolute right-0 top-full mt-1 z-30 w-28 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg py-1 text-xs">
+                                <button
+                                  type="button"
+                                  (click)="startEditReply(reply)"
+                                  class="w-full flex items-center gap-2 px-2.5 py-1 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium cursor-pointer">
+                                  <i class="fa-solid fa-pencil text-[10px] text-slate-500"></i>
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  (click)="deleteReply(comment._id, reply._id)"
+                                  class="w-full flex items-center gap-2 px-2.5 py-1 text-left text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-medium cursor-pointer">
+                                  <i class="fa-solid fa-trash-can text-[10px]"></i>
+                                  Delete
+                                </button>
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                } @empty {
+                  <p class="text-xs text-slate-500 dark:text-slate-400 font-medium py-1">
+                    No replies yet.
+                  </p>
+                }
+              }
+
+              <!-- Replying to <name> -->
+              <p class="text-xs text-slate-500 dark:text-slate-400 font-medium pt-1">
+                Replying to
+                <a
+                  [routerLink]="['/profile', comment.commentCreator._id]"
+                  class="font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">
+                  {{ comment.commentCreator.name }}
+                </a>
+              </p>
+
+              <!-- Reply Input Component -->
+              <app-createreply
+                [myPhoto]="myPhoto()"
+                [postId]="postId() || ''"
+                [commentId]="comment._id"
+                [commentCreator]="comment.commentCreator"
+                [replyingTo]="comment.commentCreator.name"
+                (replyCreated)="onReplyCreated(comment._id)">
+              </app-createreply>
+            </div>
+          }
+        </div>
+      </div>
+    } @empty {
+      @if (isLoading()) {
+        <div class="flex items-center justify-center py-6 text-slate-400 text-sm gap-2">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          <span>Loading comments...</span>
+        </div>
+      } @else {
+        <div class="text-center py-6 text-slate-400 text-sm">
+          No comments yet.
+        </div>
+      }
+    }
+  </div>
+
+  <!-- Add Comment Component -->
+  <div class="pt-3 border-t border-slate-100 dark:border-slate-800">
+    <app-add-comment [postId]="postId() || ''" [myPhoto]="myPhoto()" (commentAdded)="getAllComments()"></app-add-comment>
+  </div>
+</div>

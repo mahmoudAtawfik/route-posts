@@ -1,0 +1,202 @@
+<aside class="w-full h-fit block lg:sticky lg:top-[84px]" dir="ltr">
+  
+  <!-- Collapsible Bar -->
+  <div class="mb-3.5 flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white px-4 py-3 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+    <div class="flex items-center gap-2">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="text-[#1877f2] shrink-0"
+        aria-hidden="true">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      <h2 class="text-sm sm:text-[15px] font-bold text-slate-900 dark:text-slate-100">
+        Suggested Friends
+      </h2>
+    </div>
+    <div class="flex items-center gap-2.5">
+      <span class="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-slate-100 px-1.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+        {{ filteredUsers().length }}
+      </span>
+      <button
+        type="button"
+        (click)="toggleCollapse()"
+        class="text-xs sm:text-sm font-bold text-[#1877f2] hover:underline cursor-pointer">
+        {{ isCollapsed() ? 'Show' : 'Hide' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Expanded Suggested Friends Card -->
+  @if (!isCollapsed()) {
+    <div class="w-full rounded-2xl border border-slate-200/90 bg-white p-3.5 sm:p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 transition-all">
+      
+      <!-- Card Header -->
+      <div class="flex items-center justify-between pb-3">
+        <div class="flex items-center gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="text-[#1877f2] shrink-0"
+            aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <h2 class="text-sm sm:text-[15px] font-bold text-slate-900 dark:text-slate-100">
+            Suggested Friends
+          </h2>
+        </div>
+        <span class="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-slate-100 px-1.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+          {{ filteredUsers().length }}
+        </span>
+      </div>
+
+      <!-- Search Input -->
+      <div class="relative mb-3.5">
+        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-search shrink-0"
+            aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.3-4.3"/>
+          </svg>
+        </div>
+        <input
+          type="text"
+          [value]="searchQuery()"
+          (input)="onSearch($event)"
+          placeholder="Search friends..."
+          class="w-full rounded-xl border border-slate-200/90 bg-slate-50/70 py-2.5 pl-9 pr-8 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#1877f2] focus:bg-white focus:outline-none transition dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200 dark:focus:bg-slate-800"
+        />
+        @if (searchQuery()) {
+          <button
+            type="button"
+            (click)="clearSearch()"
+            class="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+            aria-label="Clear search">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        }
+      </div>
+
+      <!-- Suggestions List -->
+      <div class="space-y-2.5">
+        @for (user of filteredUsers(); track user._id) {
+          <div class="flex items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60">
+            
+            <!-- Left: Avatar + Name + Username -->
+            <a [routerLink]="['/profile', user._id]" class="flex items-center gap-3 min-w-0 flex-1 cursor-pointer group">
+              <img
+                [src]="user.photo || defaultAvatar"
+                (error)="$any($event.target).src = defaultAvatar"
+                [alt]="user.name"
+                class="h-10 w-10 shrink-0 rounded-full object-cover border border-slate-100 dark:border-slate-800"
+              />
+              <div class="min-w-0 flex-1">
+                <h3 class="truncate text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:underline">
+                  {{ user.name }}
+                </h3>
+                <p class="truncate text-xs text-slate-500 dark:text-slate-400">
+                  &#64;{{ user.username }}
+                </p>
+              </div>
+            </a>
+
+            <!-- Right: Follow Action Button -->
+            <button
+              type="button"
+              (click)="toggleFollow(user)"
+              [disabled]="loadingUserId() === user._id"
+              [class.bg-[#e7f3ff]]="!followingMap()[user._id]"
+              [class.text-[#1877f2]]="!followingMap()[user._id]"
+              [class.hover:bg-blue-100]="!followingMap()[user._id]"
+              [class.dark:bg-blue-900/40]="!followingMap()[user._id]"
+              [class.dark:text-blue-300]="!followingMap()[user._id]"
+              [class.bg-slate-100]="followingMap()[user._id]"
+              [class.text-slate-700]="followingMap()[user._id]"
+              [class.dark:bg-slate-800]="followingMap()[user._id]"
+              [class.dark:text-slate-300]="followingMap()[user._id]"
+              class="flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer disabled:opacity-60">
+              @if (followingMap()[user._id]) {
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <span>Following</span>
+              } @else {
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="shrink-0">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <line x1="19" x2="19" y1="8" y2="14"/>
+                  <line x1="22" x2="16" y1="11" y2="11"/>
+                </svg>
+                <span>Follow</span>
+              }
+            </button>
+          </div>
+        } @empty {
+          <div class="py-6 text-center text-xs text-slate-400">
+            No suggested friends found
+          </div>
+        }
+      </div>
+
+      <!-- View More Button -->
+      <button
+        routerLink="/suggestions"
+        class="mt-3.5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700/80 cursor-pointer">
+        <span>View more</span>
+      </button>
+
+    </div>
+  }
+</aside>
